@@ -1,107 +1,20 @@
-version 12.4
-service timestamps debug datetime msec
-service timestamps log datetime msec
-no service password-encryption
-!
-hostname 3725
-!
-boot-start-marker
-boot-end-marker
-!
-!
-no aaa new-model
-memory-size iomem 5
-ip cef
-!
-!
-!
-!
-ip vrf VRF-100
- rd 65001:100
- route-target export 65001:100
- route-target import 65001:100
-!
-no ip domain lookup
-!
-multilink bundle-name authenticated
-!
-!
-!
-archive
- log config
-  hidekeys
-! 
-!
-!
-interface Loopback0
- ip address 10.5.5.5 255.255.255.255
-!
-interface FastEthernet0/0
- no ip address
- duplex auto
- speed auto
-!
-interface FastEthernet0/0.50
- encapsulation dot1Q 50
- ip vrf forwarding VRF-100
- ip address 192.168.50.1 255.255.255.0
- vrrp 1 description SOME_VRRP
- vrrp 1 ip 192.168.50.254
- vrrp 1 timers advertise 10
- vrrp 1 authentication Cisco
-
-!
-interface FastEthernet0/1
- no ip address
- duplex auto
- speed auto
-!
-interface FastEthernet0/1.50
- encapsulation dot1Q 50
- ip address 10.0.5.1 255.255.255.0
-!
-router ospf 123
- log-adjacency-changes
- network 10.0.0.0 0.255.255.255 area 0
-!
-router bgp 65001
- no bgp default ipv4-unicast
- no bgp default route-target filter
- bgp log-neighbor-changes
- neighbor 10.10.10.10 remote-as 65001
- neighbor 10.10.10.10 update-source Loopback0
- !
- address-family vpnv4
-  neighbor 10.10.10.10 activate
-  neighbor 10.10.10.10 send-community extended
- exit-address-family
- !
- address-family ipv4 vrf VRF-200
-  no synchronization
- exit-address-family
- !
- address-family ipv4 vrf VRF-100
-  neighbor 192.168.50.2 remote-as 65002
-  neighbor 192.168.50.2 activate
-  neighbor 192.168.50.2 soft-reconfiguration inbound
-  no synchronization
- exit-address-family
-!
-ip forward-protocol nd
-!
-!
-ip http server
-no ip http secure-server
-!
-!
-!
-control-plane
-!
-!
-!
-line con 0
-line aux 0
-line vty 0 4
-!
-!
-end
+interfaces:
+- address: 10.5.5.5
+  interface: Loopback0
+  mask: 255.255.255.255
+- interface: FastEthernet0/0
+- address: 192.168.50.1
+  interface: FastEthernet0/0.50
+  mask: 255.255.255.0
+  vlan_id: 50
+  vrf: VRF-100
+  vrrp:
+    '1':
+      auth_string: Cisco
+      description: SOME_VRRP
+      ip: 192.168.50.254
+- interface: FastEthernet0/1
+- address: 10.0.5.1
+  interface: FastEthernet0/1.50
+  mask: 255.255.255.0
+  vlan_id: 50
