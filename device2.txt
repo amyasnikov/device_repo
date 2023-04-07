@@ -1,0 +1,7 @@
+interface Loopback0
+ description device2 LoopBack
+ ip address 10.0.0.2 255.255.255.255
+!
+interface ge0/0/1
+ ip address 10.10.10.1 255.255.255.252
+!
