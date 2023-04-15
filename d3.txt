@@ -16,7 +16,7 @@
         }
     },
     "routing-policies":[
-        "some_policy_name",
-        "some_unused_policy"
+        {"name": "some_policy_name"},
+        {"name": "some_unused_policy"}
     ]
 }
