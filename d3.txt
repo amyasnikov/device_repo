@@ -1,0 +1,22 @@
+{
+    "protocols": {
+        "rip": {
+            "ingress_policy": [
+                "some_policy_name"
+            ]
+        },
+        "bgp": {
+            "neighbors": [
+                {
+                    "remote_ip": "1.1.1.1",
+                    "remote_as": 100,
+                    "in_policy": "some_policy_name"
+                }
+            ]
+        }
+    },
+    "routing-policies":[
+        "some_policy_name",
+        "some_unused_policy"
+    ]
+}
