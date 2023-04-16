@@ -6,5 +6,5 @@ interfaces:
   - 101
 - name: ge0/0/2
   trunk_vlan:
-  - 20
-  - 30
+  - 40
+  - 50
