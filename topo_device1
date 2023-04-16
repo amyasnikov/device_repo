@@ -1,0 +1,10 @@
+interfaces:
+- name: ge0/0/1
+  trunk_vlan:
+  - 10
+  - 12
+  - 100
+- name: ge0/0/2
+  trunk_vlan:
+  - 20
+  - 30
