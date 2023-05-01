@@ -1,0 +1,270 @@
+# apr/30/2023 20:07:06 by RouterOS 7.1.5
+# software id = RC3X-6E1P
+#
+# model = RB952Ui-5ac2nD
+# serial number = CC3E0D80D0D5
+/interface pptp-client
+add connect-to=admingw.enforta.ertelecom.ru max-mru=1400 max-mtu=1400 name=\
+    pptp-agw-enforta use-peer-dns=yes user=irina.krasilnikova.2
+add connect-to=admingw.ertelecom.ru max-mru=1300 max-mtu=1300 name=\
+    pptp-agw-erth user=krasilnikova_ii
+/interface bridge
+add name=LAN protocol-mode=none
+/interface pppoe-client
+add allow=chap interface=ether1 name=pppoe-domru user=v44475737
+/interface ovpn-client
+add certificate=irishatik.ovpn_1 cipher=aes256 connect-to=129.159.251.27 \
+    disabled=yes mac-address=FE:C3:E7:82:F6:8F name=ovpn-oracle1 \
+    use-peer-dns=no user=irishatik verify-server-certificate=yes
+add certificate=pushkin.ovpn_1 cipher=aes256 connect-to=194.87.238.42 \
+    mac-address=FE:B0:67:06:A2:80 max-mtu=1460 name=ovpn-ruvds1 protocol=udp \
+    use-peer-dns=no user=pushkin verify-server-certificate=yes
+/interface list
+add name=LAN-interfaces
+add name=VPN-interfaces
+/interface lte apn
+set [ find default=yes ] ip-type=ipv4 use-network-apn=no
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
+add authentication-types=wpa2-psk mode=dynamic-keys name=ap \
+    supplicant-identity=MikroTik
+/interface wireless
+set [ find default-name=wlan1 ] band=2ghz-g/n frequency=2467 mode=ap-bridge \
+    security-profile=ap ssid=5G_chips_you wireless-protocol=802.11 wps-mode=\
+    disabled
+set [ find default-name=wlan2 ] band=5ghz-n/ac channel-width=20/40/80mhz-Ceee \
+    mode=ap-bridge security-profile=ap ssid=5G_chips_you5 wireless-protocol=\
+    802.11 wps-mode=disabled
+/ip pool
+add name=lan-pool ranges=192.168.0.100-192.168.0.199
+/ip dhcp-server
+add add-arp=yes address-pool=lan-pool interface=LAN lease-time=30m name=\
+    dhcp-lan
+/ppp profile
+add name=era_erth on-down=disable_erth use-encryption=yes
+add name=era_enforta on-down=disable_enforta use-encryption=yes
+/interface l2tp-client
+add connect-to=era.ertelecom.ru disabled=no name=era_enforta profile=\
+    era_enforta use-ipsec=yes user=krasilnikova.ii2@VPN_ENFORTA
+add connect-to=era.ertelecom.ru disabled=no name=era_erth profile=era_erth \
+    use-ipsec=yes use-peer-dns=yes user=krasilnikova.ii2@VPN_ERTH
+/routing bgp template
+set default as=65530 disabled=no name=default output.network=bgp-networks
+/routing ospf instance
+add name=default-v2
+/routing ospf area
+add disabled=yes instance=default-v2 name=backbone-v2
+/interface bridge port
+add bridge=LAN interface=ether2
+add bridge=LAN interface=ether3
+add bridge=LAN interface=ether4
+add bridge=LAN interface=ether5
+add bridge=LAN interface=wlan1
+add bridge=LAN interface=wlan2
+/ip settings
+set max-neighbor-entries=8192
+/ipv6 settings
+set disable-ipv6=yes max-neighbor-entries=8192
+/interface l2tp-server server
+set authentication=chap,mschap1,mschap2
+/interface list member
+add interface=LAN list=LAN-interfaces
+add interface=ether2 list=LAN-interfaces
+add interface=ether3 list=LAN-interfaces
+add interface=ether4 list=LAN-interfaces
+add interface=ether5 list=LAN-interfaces
+add interface=ovpn-ruvds1 list=VPN-interfaces
+/ip address
+add address=192.168.255.0/24 interface=LAN network=192.168.255.0
+/ip dhcp-client
+add interface=ether1 use-peer-dns=no
+/ip dhcp-server network
+add address=192.168.0.0/24 dns-server=192.168.0.1 gateway=192.168.0.1
+/ip dns
+set allow-remote-requests=yes servers=8.8.8.8,1.1.1.1 verify-doh-cert=yes
+/ip dns static
+add address=10.101.21.127 name=kb.ertelecom.ru
+add address=10.101.9.160 name=ticket.ertelecom.ru
+/ip firewall filter
+add action=accept chain=input connection-state=established,related
+add action=accept chain=input in-interface-list=LAN-interfaces
+add action=accept chain=input in-interface-list=VPN-interfaces
+add action=accept chain=input port=1701 protocol=udp
+add action=drop chain=input
+add action=fasttrack-connection chain=forward connection-state=\
+    established,related hw-offload=yes
+add action=accept chain=forward connection-state=established,related
+add action=accept chain=forward in-interface=ovpn-ruvds1
+add action=accept chain=forward in-interface-list=LAN-interfaces
+add action=drop chain=forward
+/ip firewall mangle
+# pppoe-domru not ready
+add action=change-mss chain=postrouting new-mss=clamp-to-pmtu out-interface=\
+    pppoe-domru protocol=tcp tcp-flags=syn
+# pptp-agw-enforta not ready
+add action=change-mss chain=postrouting new-mss=clamp-to-pmtu out-interface=\
+    pptp-agw-enforta protocol=tcp tcp-flags=syn
+# pptp-agw-erth not ready
+add action=change-mss chain=postrouting new-mss=clamp-to-pmtu out-interface=\
+    pptp-agw-erth protocol=tcp tcp-flags=syn
+# no interface
+add action=change-mss chain=postrouting new-mss=clamp-to-pmtu out-interface=\
+    *E protocol=tcp tcp-flags=syn
+/ip firewall nat
+# pppoe-domru not ready
+add action=masquerade chain=srcnat out-interface=pppoe-domru
+# pptp-agw-erth not ready
+add action=masquerade chain=srcnat out-interface=pptp-agw-erth
+# pptp-agw-enforta not ready
+add action=masquerade chain=srcnat out-interface=pptp-agw-enforta
+add action=masquerade chain=srcnat out-interface=ether1
+add action=masquerade chain=srcnat out-interface=era_enforta
+add action=masquerade chain=srcnat out-interface=era_erth
+/ip proxy
+set anonymous=yes enabled=yes port=1234
+/ip route
+add disabled=no dst-address=10.235.0.0/16 gateway=era_erth
+add disabled=no dst-address=10.66.0.0/16 gateway=era_enforta
+add disabled=no dst-address=10.196.0.0/16 gateway=era_erth
+add comment=ERTH_IT disabled=no dst-address=10.100.0.0/15 gateway=era_erth
+add disabled=no dst-address=109.194.0.0/15 gateway=era_erth
+add disabled=no dst-address=10.125.0.0/16 gateway=era_erth
+add disabled=no dst-address=212.33.233.40/29 gateway=era_erth
+add disabled=no dst-address=109.194.152.39/32 gateway=pppoe-domru
+add disabled=no dst-address=172.16.0.0/12 gateway=era_enforta
+add disabled=no dst-address=10.182.0.0/16 gateway=era_erth
+add disabled=no dst-address=109.195.96.176/29 gateway=era_erth
+add disabled=no dst-address=10.255.0.0/16 gateway=era_erth
+add disabled=no dst-address=10.38.0.0/16 gateway=era_enforta
+add disabled=no dst-address=10.101.10.0/25 gateway=era_enforta
+add disabled=no dst-address=10.84.0.0/16 gateway=era_enforta
+add disabled=no dst-address=5.165.6.102/32 gateway=era_erth
+add disabled=no dst-address=188.234.220.101/32 gateway=era_erth
+add disabled=no dst-address=10.147.0.0/16 gateway=era_erth
+add disabled=no dst-address=5.3.0.0/21 gateway=era_erth
+add disabled=no dst-address=10.77.128.0/17 gateway=era_enforta
+add disabled=no dst-address=10.226.0.0/16 gateway=era_enforta
+add disabled=no dst-address=176.213.132.8/29 gateway=era_erth
+add disabled=no dst-address=10.59.0.0/16 gateway=era_enforta
+add disabled=no dst-address=10.70.0.0/16 gateway=era_enforta
+add disabled=no dst-address=10.251.0.0/16 gateway=era_enforta
+add disabled=no dst-address=10.166.0.0/16 gateway=era_enforta
+add disabled=no dst-address=188.234.120.26/32 gateway=era_erth
+add disabled=no dst-address=10.77.0.0/17 gateway=era_enforta
+add disabled=no dst-address=212.33.234.136/29 gateway=era_erth
+add disabled=no dst-address=212.33.234.160/29 gateway=era_erth
+add disabled=no dst-address=91.144.133.16/29 gateway=era_erth
+add disabled=no dst-address=10.156.0.0/16 gateway=era_erth
+add dst-address=212.33.232.88/29 gateway=era_erth
+add dst-address=5.165.26.0/24 gateway=era_erth
+add dst-address=129.159.251.27 gateway=pppoe-domru
+add dst-address=5.165.6.104/32 gateway=era_erth
+add dst-address=5.165.6.105/32 gateway=era_erth
+add comment=twitter disabled=yes dst-address=10.244.40.0/21 gateway=\
+    ovpn-oracle1
+add comment=twitter disabled=yes dst-address=152.199.21.141/24 gateway=\
+    ovpn-oracle1
+add comment=tvrain dst-address=178.248.236.23/32 gateway=ovpn-oracle1
+add disabled=yes gateway=ovpn-oracle1
+add dst-address=8.8.8.8 gateway=ovpn-oracle1
+add dst-address=1.1.1.1 gateway=ovpn-oracle1
+add dst-address=212.33.225.235/32 gateway=era_erth
+add comment=zona.media dst-address=104.22.11.208 gateway=ovpn-oracle1
+add comment=zona.media dst-address=172.67.6.82 gateway=ovpn-oracle1
+add comment=zona.media dst-address=104.22.10.208 gateway=ovpn-oracle1
+add dst-address=104.18.6.29 gateway=ovpn-oracle1
+add dst-address=104.18.7.29 gateway=ovpn-oracle1
+add dst-address=109.195.96.152/29 gateway=era_erth
+add comment=protonmail dst-address=185.70.42.12 gateway=ovpn-oracle1
+add dst-address=10.174.0.0/16 gateway=era_enforta
+add dst-address=10.243.11.0/24 gateway=era_enforta
+add dst-address=10.115.15.0/24 gateway=era_erth
+add dst-address=10.72.0.0/16 gateway=era_enforta
+add dst-address=10.86.0.0/16 gateway=era_enforta
+add dst-address=10.109.0.0/16 gateway=era_enforta
+add distance=100 gateway=pppoe-domru
+add dst-address=109.194.152.39/32 gateway=192.168.0.1
+add dst-address=10.34.139.241/24 gateway=era_enforta
+add dst-address=10.177.0.0/16 gateway=era_enforta
+add dst-address=10.190.0.0/16 gateway=era_enforta
+add dst-address=10.197.0.0/16 gateway=era_enforta
+add dst-address=10.199.0.0/16 gateway=era_enforta
+add dst-address=10.200.0.0/16 gateway=era_enforta
+add dst-address=10.90.0.0/16 gateway=era_enforta
+add dst-address=10.97.0.0/16 gateway=era_enforta
+add dst-address=10.99.0.0/16 gateway=era_enforta
+add dst-address=10.210.0.0/16 gateway=era_enforta
+add dst-address=10.28.0.0/16 gateway=era_enforta
+add dst-address=10.65.0.0/16 gateway=era_enforta
+add dst-address=10.209.0.0/16 gateway=era_enforta
+add dst-address=10.51.0.0/16 gateway=era_enforta
+add dst-address=10.29.0.0/16 gateway=era_enforta
+add dst-address=10.50.0.0/16 gateway=era_enforta
+add dst-address=10.110.0.0/16 gateway=era_enforta
+add comment=NO_AGW dst-address=170.114.0.0/16 gateway=192.168.0.1
+add comment=NO_AGW dst-address=212.33.233.43 gateway=192.168.0.1
+add dst-address=109.194.154.7/32 gateway=192.168.0.1
+add comment=bsr03.perm dst-address=212.33.234.193/32 gateway=era_erth
+add comment=bsr04.perm dst-address=212.33.234.209/32 gateway=era_erth
+add dst-address=212.33.225.224/27 gateway=era_erth
+add dst-address=188.186.144.0/20 gateway=era_erth
+add dst-address=10.115.0.0/24 gateway=era_erth
+add comment=MAILDOMRU dst-address=188.186.146.48/32 gateway=192.168.0.1
+add dst-address=10.161.0.0/16 gateway=era_enforta
+add dst-address=109.194.152.17/32 gateway=192.168.0.1
+add dst-address=10.23.0.0/16 gateway=era_enforta
+add dst-address=10.22.0.0/16 gateway=era_enforta
+add dst-address=10.60.0.0/16 gateway=era_enforta
+add dst-address=10.216.0.0/16 gateway=era_enforta
+add dst-address=10.164.0.0/16 gateway=era_enforta
+add dst-address=46.52.248.45/32 gateway=era_erth
+add dst-address=10.186.0.0/16 gateway=era_enforta
+add dst-address=10.34.0.0/16 gateway=era_enforta
+add dst-address=10.220.0.0/16 gateway=era_enforta
+add dst-address=10.25.0.0/16 gateway=era_enforta
+add dst-address=10.52.0.0/16 gateway=era_enforta
+add dst-address=10.55.0.0/16 gateway=era_enforta
+add dst-address=10.11.0.0/16 gateway=era_enforta
+add dst-address=10.78.0.0/16 gateway=era_enforta
+add dst-address=10.64.0.0/16 gateway=era_enforta
+add dst-address=10.24.0.0/16 gateway=era_enforta
+add dst-address=10.26.0.0/16 gateway=era_enforta
+add dst-address=176.213.132.136/29 gateway=era_erth
+add dst-address=10.101.9.3/32 gateway=era_enforta
+add dst-address=10.101.9.33/32 gateway=era_enforta
+add dst-address=10.100.20.45/32 gateway=era_enforta
+add dst-address=5.3.3.121/32 gateway=192.168.0.1
+/ip service
+set www-ssl certificate=pushkin-ca disabled=no
+/ip socks
+set enabled=yes port=1234 version=5
+/ip ssh
+set always-allow-password-login=yes
+/ip upnp
+set enabled=yes
+/ip upnp interfaces
+add interface=pppoe-domru type=external
+add interface=LAN type=internal
+/ppp secret
+add local-address=1.2.3.1 name=ferma remote-address=1.2.3.4
+/system clock
+set time-zone-name=Asia/Yekaterinburg
+/system identity
+set name=PushkinRouter
+/system logging
+add topics=ppp,pptp
+/system script
+add dont-require-permissions=no name=disable_erth owner=myasnikov policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
+    "/interface l2tp-client disable [find name=era_erth]"
+add dont-require-permissions=no name=disable_enforta owner=myasnikov policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
+    "/interface l2tp-client disable [find name=era_enforta]"
+add dont-require-permissions=no name=test_script owner=myasnikov policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
+    "/ppp active print\
+    \n/system resource print\
+    \n/ip address print\
+    \n"
+/tool mac-server
+set allowed-interface-list=LAN-interfaces
