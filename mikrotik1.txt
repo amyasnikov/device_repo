@@ -1,2 +1,17 @@
-interface qwert
- ip address 1.1.1.1/24
+# comment
+/system script
+add dont-require-permissions=no name=test_script owner=myasnikov policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
+    "/ppp active print\
+    \n/system resource print\
+    \n/ip address print\
+    \n"
+/ip pool
+add name=pool1 ranges=192.168.1.100-192.168.1.199
+add name=pool2 ranges=192.168.2.100-192.168.2.199
+/ip service
+set www-ssl certificate=some_cert disabled=no
+/ipv6 settings
+set disable-ipv6=yes max-neighbor-entries=8192
+/interface ethernet
+set [ find default-name=ether1 ] comment="some comment"
