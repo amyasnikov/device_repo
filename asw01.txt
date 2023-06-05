@@ -1,0 +1,21 @@
+interfaces:
+- name: ge-0/0/1
+  description: asw10-ge0/0/5
+  enabled: yes
+- name: ge-0/0/2
+  enabled: yes
+- name: ge-0/0/3
+  enabled: yes
+- name: ge-0/0/4
+  enabled: no
+
+protocols:
+  ospf:
+    enabled: yes
+    areas:
+    - id: '0.0.0.0'
+      interfaces: [ge-0/0/1, ge-0/0/2]
+
+hostname: asw01
+
+ntp-servers: ["1.2.3.4", "5.6.7.7"]
