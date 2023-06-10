@@ -1,0 +1,152 @@
+hostname Leaf1
+
+nv overlay evpn
+feature ospf
+feature bgp
+feature pim
+feature fabric forwarding
+feature interface-vlan
+feature vn-segment-vlan-based
+feature lacp
+feature nv overlay
+feature ntp
+
+copp profile strict
+evpn esi multihoming 
+  ethernet-segment delay-restore time 180
+
+fabric forwarding anycast-gateway-mac 0000.2222.3333
+ip pim rp-address 192.168.1.1 group-list 224.0.0.0/4
+ip pim ssm range 232.0.0.0/8
+
+vlan 1,10,100,200,300,400
+
+vlan 10
+  vn-segment 500001
+vlan 100
+  vn-segment 5001002
+vlan 200
+  vn-segment 5001001
+
+vrf context vxlan-500001
+  vni 500001
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+  address-family ipv6 unicast
+    route-target both auto
+    route-target both auto evpn
+hardware access-list tcam region vacl 0
+hardware access-list tcam region e-racl 0
+hardware access-list tcam region arp-ether 256
+
+interface Vlan10
+  no shutdown
+  vrf member vxlan-500001
+  ip forward
+
+interface Vlan100
+  no shutdown
+  vrf member vxlan-500001
+  ip address 172.20.1.1/24
+  fabric forwarding mode anycast-gateway
+
+interface Vlan200
+  no shutdown
+  vrf member vxlan-500001
+  ip address 172.21.1.1/24
+  fabric forwarding mode anycast-gateway
+
+
+interface port-channel101
+  switchport mode trunk
+  switchport trunk allowed vlan 100
+  ethernet-segment 2001
+    system-mac 0000.0000.2001
+  mtu 9216
+
+
+interface port-channel111
+  switchport mode trunk
+  switchport trunk allowed vlan 100,200,300,400
+  ethernet-segment 2011
+    system-mac 0000.0000.2011
+  mtu 9216
+
+interface nve1
+  no shutdown
+  host-reachability protocol bgp
+  source-interface loopback0
+  member vni 500001 associate-vrf
+  member vni 5001001
+    suppress-arp
+    mcast-group 239.0.0.1
+  member vni 5001002
+    suppress-arp
+    mcast-group 239.0.0.1
+
+interface Ethernet1/1
+  no switchport
+ evpn multihoming core-tracking
+  ip address 172.16.0.1/30
+  ip ospf network point-to-point
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet1/3
+  no switchport
+ evpn multihoming core-tracking
+  ip address 172.16.1.1/30
+  ip ospf network point-to-point
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet1/6
+  switchport mode trunk
+  switchport trunk allowed vlan 100,200,300,400
+  mtu 9216
+  channel-group 111 mode active
+
+interface loopback0
+  ip address 192.168.1.3/32
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+
+router ospf 100
+  router-id 192.168.1.3
+router bgp 100
+  router-id 192.168.1.3
+  address-family ipv4 unicast
+  address-family l2vpn evpn
+    maximum-paths ibgp 3
+    additional-paths send
+    additional-paths receive
+  neighbor 192.168.1.1
+    remote-as 100
+    update-source loopback0
+    address-family ipv4 unicast
+      send-community extended
+    address-family l2vpn evpn
+      send-community extended
+  neighbor 192.168.1.2
+    remote-as 100
+    update-source loopback0
+    address-family ipv4 unicast
+      send-community extended
+    address-family l2vpn evpn
+      send-community extended
+evpn
+vrf context vxlan-500001
+rd auto
+address-family ipv4 unicast
+route-target both auto
+route-target both auto evpn
+address-family ipv6 unicast
+route-target both auto
+route-target both auto evpn
+
+ntp server 1.2.3.4
+ntp-server 5.6.7.8
