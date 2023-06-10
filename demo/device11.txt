@@ -1,4 +1,4 @@
-hostname Leaf1
+hostname device11.site-1
 
 nv overlay evpn
 feature ospf
