@@ -1,4 +1,4 @@
-hostname device12.site-1
+hostname device12
 
 nv overlay evpn
 feature ospf
